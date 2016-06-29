@@ -1541,7 +1541,7 @@ void  user_init(void)
 
 void main_loop(void)
 {
-
+////
     if((rf_lostTime>=100))//||(rf_lostTime==0))
     {
     	   sensor_offset();
@@ -1556,6 +1556,8 @@ void main_loop(void)
    vr_fb_tmp=0x80;
    vr_lr_tmp=0x80;
 
+//
+   //
 
     b_gyroOffset=1;
     IMU_init();
