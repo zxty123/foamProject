@@ -1561,7 +1561,7 @@ void main_loop(void)
     IMU_init();
 
     pwm_speedSet(0,0,0,0);
-    pwm_init(5);	//7:750		6:1.5k	5:3k	4:6k
+    pwm_init(6);	//7:750		6:1.5k	5:3k	4:6k
     pid_normalMode();
 	rf_lostTime=0;     //≥ı ºªØ
 

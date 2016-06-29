@@ -139,7 +139,9 @@ void flash_ramRst(void)
 			   dectectData.a_agc=10;//负反馈			//角度  pid 设置
 			   dectectData.a_p=3500;//2700;220000  1600
 			   dectectData.a_i=0; //50 150
-			   dectectData.a_d=200;//50;
+			   dectectData.a_d=100;//50;
+
+
 
 			   dectectData.z_p=5000;//3000			//z轴  pid 设置
 			   dectectData.z_i=50;  //50
