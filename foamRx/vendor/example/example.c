@@ -1275,7 +1275,7 @@ void stunt_play(void)
 	   stunt_timePwm(400,dectectData.stunt2);
 	   stunt_timePwm(20,50);
 
-	   PID_AP=700;						//翻滚加速度设置
+	   PID_AP=1000;						//翻滚加速度设置
 	   PID_GP=2300;
 	  // PID_AP=1800;
 	//   if(stunt_type==3||stunt_type==4)PID_AP=2000;
