@@ -132,12 +132,12 @@ void flash_saveData(void)
 void flash_ramRst(void)
 {
 			   dectectData.g_agc=3;//3//陀螺仪负反馈
-			   dectectData.g_p=2500;//3000;//1500;			//陀螺仪 pid 设置
+			   dectectData.g_p=3000;//3000;//1500;			//陀螺仪 pid 设置
 			   dectectData.g_i=40;//40;
 			   dectectData.g_d=12000;//15000;//5000;4000
 
 			   dectectData.a_agc=10;//负反馈			//角度  pid 设置
-			   dectectData.a_p=2500;//2700;220000  1600
+			   dectectData.a_p=3500;//2700;220000  1600
 			   dectectData.a_i=0; //50 150
 			   dectectData.a_d=200;//50;
 
@@ -162,7 +162,7 @@ void flash_ramRst(void)
 			   dectectData.stunt4=550;//speed pwm 0~80~-80度 600
 
 			   dectectData.stunt5=600;////pwm 0~180~-180度 100
-			   dectectData.stunt6=630;//speed pwm 0~180~-180度 780
-			   dectectData.stunt7=12;//gyro 18
+			   dectectData.stunt6=650;//speed pwm 0~180~-180度 780
+			   dectectData.stunt7=13;//gyro 18
 			   dectectData.stunt8=300;//自动回中的马达上升时间
 }

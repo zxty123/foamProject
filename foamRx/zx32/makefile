@@ -38,7 +38,7 @@ main-build: zxty_SDK.elf secondary-outputs
 zxty_SDK.elf: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: TC32 C Linker'
-	tc32-elf-ld --gc-sections -L"E:\foamProject\foamProject.git\trunk\foamRx\proj_lib" -L"E:\foamProject\foamProject.git\trunk\foamRx\vendor\lib" -T ../boot.link -o"zxty_SDK.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	tc32-elf-ld --gc-sections -L"E:\foamProject\foamSource\trunk\foamRx\proj_lib" -L"E:\foamProject\foamSource\trunk\foamRx\vendor\lib" -T ../boot.link -o"zxty_SDK.elf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 	$(MAKE) --no-print-directory post-build
@@ -67,11 +67,11 @@ clean:
 	-@echo ' '
 
 pre-build:
-	-E:\foamProject\foamProject.git\trunk\foamRx/getver.sh
+	-E:\foamProject\foamSource\trunk\foamRx/getver.sh
 	-@echo ' '
 
 post-build:
-	-E:\foamProject\foamProject.git\trunk\foamRx/proc.bat
+	-E:\foamProject\foamSource\trunk\foamRx/proc.bat
 	-@echo ' '
 
 secondary-outputs: $(LST) $(FLASH_IMAGE) $(SIZEDUMMY)

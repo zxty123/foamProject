@@ -121,7 +121,7 @@ s16 pid_xyz(float pid_imu,s32 gyro,s32 pid_target,u8 type)
    	   kp = error * (float)PID_ZP * 0.0001f;
 
        pid_gyro_integrator[type] += error * 0.0001f * (float)PID_ZI;
-   	   pid_gyro_integrator[type] = Math_fConstrain(pid_gyro_integrator[type],-280,280);//100
+   	   pid_gyro_integrator[type] = Math_fConstrain(pid_gyro_integrator[type],-180,180);//100
 
    	   ki=pid_gyro_integrator[type];
 
@@ -152,7 +152,7 @@ s16 pid_xyz(float pid_imu,s32 gyro,s32 pid_target,u8 type)
 
       error = pid_imu + (float)pid_target/100.0f;
 
-      error = Math_fConstrain(error,-70,70);//50
+      error = Math_fConstrain(error,-30,30);//50
 
       gyro=gyro-((s32)(pid_gyro_integrator[type]*PID_GA));
 
@@ -163,7 +163,7 @@ s16 pid_xyz(float pid_imu,s32 gyro,s32 pid_target,u8 type)
       pid_integrator[type] = 0;//Math_fConstrain(pid_integrator[type],-100,100);//100
 
       pid_gyro_integrator[type] += (float)gyro * 0.0001f * (float)PID_GI;
-      pid_gyro_integrator[type] = Math_fConstrain(pid_gyro_integrator[type],-500,500);//100
+      pid_gyro_integrator[type] = Math_fConstrain(pid_gyro_integrator[type],-100,100);//100
 
       ki=pid_integrator[type]+pid_gyro_integrator[type];
 

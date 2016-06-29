@@ -38,7 +38,7 @@ int hwAR_GyroData_Buf1[GYRO_LEN];
 int hwAR_GyroData_Buf2[GYRO_LEN];
 
 
-#define GSEN_LEN		15//;//5//20
+#define GSEN_LEN		5//;//5//20
 unsigned char	Gsen_Buf_Index = 0;
 unsigned char F_Gsen_Start_Aver = 0;
 short hwAR_GsenData_Buf0[GSEN_LEN];

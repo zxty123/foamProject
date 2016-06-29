@@ -1066,60 +1066,6 @@ void stunt_timePwm(u32 tm,s16 spd)
 
 
 
-void stunt_autoPlay(void)
-{
-	s16 x,y,z;
-	s16 temp1;
-	temp1=500;
-	time[TIME_STUNT_UPDATA]= clock_time();
-
-	while(1)
-	{
-		if(time_checkMs(TIME_STUNT_UPDATA,500)==1)break;
-
-		if(sensor_getData()==1)
-		{
-
-			//if(temp1>950)temp1=950;
-			//if(temp1<650)temp1=650;
-
-
-
-			pwm_m1=temp1;
-			pwm_m2=temp1;
-			pwm_m3=temp1;
-			pwm_m4=temp1;
-
-		//    pid_gyro_integrator[0]=0;
-		  //  pid_gyro_integrator[1]=0;
-		 //   pid_integrator[0]=0;
-		  //  pid_integrator[1]=0;
-
-		    if(stunt_type==2){if(IMU_Roll_<1600)break;}//IMU_Pitch_ 170
-			if(stunt_type==1){if(IMU_Roll_>20000)break;}//IMU_Pitch_ 190
-
-			if(stunt_type==3){if(IMU_Pitch_<1600)break;}//IMU_Roll_ 170
-			if(stunt_type==4){if(IMU_Pitch_>20000)break;}//IMU_Roll_ 190
-
-
-		    gps_x=0;
-
-		    gps_y=0;
-		    gps_z=0;
-
-			IMU_getYawPitchRoll();
-			x=pid_xyz(roll,gx_,gps_x,0);
-		    y=pid_xyz(-pitch,gy_,gps_y,1);
-			z=pid_xyz(0,gz_,gps_z,2);
-
-
-            stunt_imu=2;
-            motor_set(x,y,z);
-            pwm_speedSet(pwm_m1,pwm_m2,pwm_m3,pwm_m4);
-		}
-	}
-}
-
 
 
 void stunt_playTurn(void)
@@ -1275,9 +1221,13 @@ void stunt_play(void)
 	   stunt_timePwm(400,dectectData.stunt2);
 	   stunt_timePwm(20,50);
 
-	   PID_AP=1000;						//翻滚加速度设置
-	   PID_GP=2300;
-	  // PID_AP=1800;
+	   //PID_AP=1500;						//翻滚加速度设置
+	   //PID_GP=2600;
+	   PID_GP=3800;
+	   PID_GD=15000;
+
+	   PID_AP=4000;
+	  // PID_AD=450;
 	//   if(stunt_type==3||stunt_type==4)PID_AP=2000;
 	   stunt_playTurn();
 	//   stunt_autoPlay();
