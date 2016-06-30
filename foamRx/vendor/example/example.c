@@ -353,6 +353,9 @@ void user_rcv_proc(u8* p)
 
 void io_init(void)
 {
+
+//
+	//
 	gpio_set_func(GPIO_GP24, AS_GPIO);
 	gpio_set_output_en(GPIO_GP24, 1);
 

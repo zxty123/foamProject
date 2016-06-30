@@ -39,7 +39,7 @@ main-build: Quadcopter.elf secondary-outputs
 Quadcopter.elf: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: TC32 C Linker'
-	tc32-elf-ld --gc-sections -L"E:\foamProject\foamSource\trunk\foamTx\proj_lib" -L"E:\foamProject\foamSource\trunk\foamTx\vendor\txlib" -T ../boot.link -o"Quadcopter.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	tc32-elf-ld --gc-sections -L"D:\work\Ð¤Ô£·á\foamProjectgit\trunk\foamTx\proj_lib" -L"D:\work\Ð¤Ô£·á\foamProjectgit\trunk\foamTx\vendor\txlib" -T ../boot.link -o"Quadcopter.elf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -67,7 +67,7 @@ clean:
 	-@echo ' '
 
 pre-build:
-	-E:\foamProject\foamSource\trunk\foamTx/getver.sh
+	-D:\work\Ð¤Ô£·á\foamProjectgit\trunk\foamTx/getver.sh
 	-@echo ' '
 
 secondary-outputs: $(LST) $(FLASH_IMAGE) $(SIZEDUMMY)
