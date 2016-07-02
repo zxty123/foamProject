@@ -148,8 +148,8 @@ void flash_ramRst(void)
 			   dectectData.z_d=11;//11
 			   dectectData.z_angle=12;
 
-			   dectectData.rc_spd1=8;//10 15		//手柄速度控制
-			   dectectData.rc_spd2=5;//15
+			   dectectData.rc_spd1=12;//10 15		//手柄速度控制
+			   dectectData.rc_spd2=9;//15
 			   dectectData.rc_de1=15;				//z轴旋转速度
 			   dectectData.rc_de2=15;
 

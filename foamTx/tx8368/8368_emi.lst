@@ -404,17 +404,17 @@ Disassembly of section .ram_code:
 
 00000100 <__divsi3>:
 __divsi3():
- 100:	0b06      	tloadr	r3, [pc, #24]	; (11c <__divsi3+0x1c>)
+ 100:	0b06      	tloadr	r3, [pc, #24]	; (11c <IRQ_STK_SIZE+0x1c>)
  102:	5018      	tstorer	r0, [r3, #0]
  104:	b304      	tadds	r3, #4
  106:	5019      	tstorer	r1, [r3, #0]
- 108:	0a05      	tloadr	r2, [pc, #20]	; (120 <__divsi3+0x20>)
+ 108:	0a05      	tloadr	r2, [pc, #20]	; (120 <IRQ_STK_SIZE+0x20>)
  10a:	a301      	tmovs	r3, #1
  10c:	4013      	tstorerb	r3, [r2, #0]
  10e:	4813      	tloadrb	r3, [r2, #0]
  110:	ab00      	tcmp	r3, #0
  112:	c1fc      	tjne.n	10e <__divsi3+0xe>
- 114:	0b01      	tloadr	r3, [pc, #4]	; (11c <__divsi3+0x1c>)
+ 114:	0b01      	tloadr	r3, [pc, #4]	; (11c <IRQ_STK_SIZE+0x1c>)
  116:	5818      	tloadr	r0, [r3, #0]
  118:	0770      	tjex	lr
  11a:	46c0      	tnop			; (mov r8, r8)
@@ -2294,7 +2294,7 @@ get_Offset():
     1096:	c1f6      	tjne.n	1086 <get_Offset+0x12>
     1098:	ec28      	tadds	r0, r5, #0
     109a:	a114      	tmovs	r1, #20
-    109c:	97ff 9830 	tjl	100 <__divsi3>
+    109c:	97ff 9830 	tjl	100 <IRQ_STK_SIZE>
     10a0:	9000 9d96 	tjl	1bd0 <adc_avr>
     10a4:	0643      	tmov	r3, r8
     10a6:	eac0      	tsubs	r0, r0, r3
@@ -2903,7 +2903,7 @@ user_init():
     15d4:	008092a8 	taddeq	r9, r0, r8, lsr #5
     15d8:	0080042b 	taddeq	r0, r0, fp, lsr #8
     15dc:	ff0000ff 	undefined instruction 0xff0000ff
-    15e0:	00270f00 	txoreq	r0, r7, r0, lsl #30
+    15e0:	001e6100 	tandseq	r6, lr, r0, lsl #2
     15e4:	008093f4 	undefined instruction 0x008093f4
     15e8:	008093b8 	undefined instruction 0x008093b8
     15ec:	008093c0 	taddeq	r9, r0, r0, asr #7
@@ -3449,7 +3449,7 @@ Rf_TrxStateSet():
     1a8c:	ea20      	tsubs	r0, r4, r0
     1a8e:	f200      	tshftls	r0, r0, #8
     1a90:	a150      	tmovs	r1, #80	; 0x50
-    1a92:	97fe 9b35 	tjl	100 <__divsi3>
+    1a92:	97fe 9b35 	tjl	100 <IRQ_STK_SIZE>
     1a96:	ec01      	tadds	r1, r0, #0
     1a98:	0369      	tmuls	r1, r5
     1a9a:	e209      	tasrs	r1, r1, #8
@@ -3618,7 +3618,7 @@ adc_avr():
     1be2:	e850      	tadds	r0, r2, r1
     1be4:	a132      	tmovs	r1, #50	; 0x32
     1be6:	0359      	tmuls	r1, r3
-    1be8:	97fe 9a8a 	tjl	100 <__divsi3>
+    1be8:	97fe 9a8a 	tjl	100 <IRQ_STK_SIZE>
     1bec:	e080      	tasrs	r0, r0, #2
     1bee:	6d00      	tpop	{pc}
     1bf0:	01af281b 	undefined instruction 0x01af281b

@@ -132,7 +132,7 @@ s16 pid_xyz(float pid_imu,s32 gyro,s32 pid_target,u8 type)
    else
    {
 	   //pid_imuLimit
-/*
+
 	   if(stunt_type==0)
 	  	   {
 
@@ -148,7 +148,7 @@ s16 pid_xyz(float pid_imu,s32 gyro,s32 pid_target,u8 type)
 	      	   else pid_imu=0;
 	      	  }
 	  	   }
-*/
+
 
       error = pid_imu + (float)pid_target/100.0f;
 

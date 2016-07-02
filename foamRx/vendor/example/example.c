@@ -353,9 +353,6 @@ void user_rcv_proc(u8* p)
 
 void io_init(void)
 {
-
-//
-	//
 	gpio_set_func(GPIO_GP24, AS_GPIO);
 	gpio_set_output_en(GPIO_GP24, 1);
 
@@ -475,8 +472,8 @@ void debug_send(u16 x,u16 y,u16 z)
 				   dectectData.mz=s_pwmM3;//P_bat;//az;
 
 				   dectectData.thr=thr;
-				   dectectData.fb=trim_fb_tmp;//vr_fb_tmp;//gps_x;
-				   dectectData.lr=trim_lr_tmp;//vr_lr_tmp;//gps_y;
+				   dectectData.fb=gps_x;//trim_fb_tmp;//vr_fb_tmp;//
+				   dectectData.lr=gps_y;//trim_lr_tmp;//vr_lr_tmp;//
 				   dectectData.rotor=gps_z;
 
 				   dectectData.cmd1=x;
@@ -760,7 +757,7 @@ void rf_dataUpdate(void)
 
 	if((z>45)||(z<-45))								//防止自转刷锅动作，锁定 z 轴程序
 	{
-		startflytime=190;
+		startflytime=180;
 		pid_gyro_integrator[0]=0;
 		pid_gyro_integrator[1]=0;
 		pid_gyro_integrator[2]=0;
@@ -1208,7 +1205,7 @@ void stunt_play(void)
 
 	   pid_integrator[0]=0;
 	   pid_integrator[1]=0;
-	   startflytime=160;
+	   startflytime=180;
 	 // pid_reset=200;
       if(time_checkMs(TIME_STUNT_UPDATA,300)==1)
       {

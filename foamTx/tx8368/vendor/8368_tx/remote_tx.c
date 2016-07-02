@@ -51,6 +51,7 @@ u8 bat_lower=0;
 u8 correct_flag;
 u8 swlistLast;
 u8 stunt_flag;
+u8 stunt_key_f;
 volatile u8 chn;
 const u8 rf_channel_select[9][4]= {
 	{22,40,60,13},
@@ -254,17 +255,18 @@ void imu_offset(void)
 					if(times<100)return;
 					if(b_run==0)
 					{
-						buzzer_play(300);
-						time_ms(200);
-						buzzer_play(300);
-						time_ms(200);
+						//buzzer_play(300);
+						//time_ms(200);
+						//buzzer_play(300);
+						//time_ms(200);
 
-						//correct_flag=1;
+						//correct_flag=1;//
 
 						tx_packet.vr_stunt=0xcc;
 						b_run=1;
 						tx_packet.trim_fb=trim_fb=0;
 						tx_packet.trim_lr=trim_lr=0;
+						tx_packet.trim_rotor=trim_rotor=0;
 					}
 					return;
 				}
@@ -518,7 +520,7 @@ void user_init()
 	write_reg8(0x80042b,0xf8);
 	Rf_PowerLevelSet(RF_POWER_8dBm);
 //	rf_tx_irq_handler = irq_rf_tx;
-	tx_packet.addr_rx=7777;
+	tx_packet.addr_rx=9999;
 	//tx_packet.addr_tx=get_id(ID_ADDR);
 	tx_packet.addr_tx=get_id(0x3fc0);
 	tx_packet.vr_rotor=0x80;
@@ -550,6 +552,7 @@ void user_init()
 		swlistLast=2;
 		tx_packet.button_1&=0xcf;
 		stunt_flag=0;
+		stunt_key_f=0;
 	}
 	else
 	{	if(temp<20)
@@ -557,6 +560,7 @@ void user_init()
 			//·­¹öµµ
 			swlistLast=0;
 			stunt_flag=1;
+			stunt_key_f=0;
 		}
 		else
 		{
@@ -564,6 +568,7 @@ void user_init()
 			swlistLast=1;
 			tx_packet.button_1|=0x30;
 			stunt_flag=0;
+			stunt_key_f=0;
 		}
 	}
 
@@ -586,7 +591,7 @@ void main_loop (void)
 	//tx_packet.trim_lr=Sw_adcValue>>2;
 
 	if(clock_time_exceed(sending_time,8000)){
-		sending_time=clock_time();
+		sending_time=clock_time(); //
 		control_value_processing();
 		imu_offset();
 		vr_thrCheck();
