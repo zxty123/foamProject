@@ -38,7 +38,7 @@ int hwAR_GyroData_Buf1[GYRO_LEN];
 int hwAR_GyroData_Buf2[GYRO_LEN];
 
 
-#define GSEN_LEN		5//;//5//20
+#define GSEN_LEN		4//;//5//20
 unsigned char	Gsen_Buf_Index = 0;
 unsigned char F_Gsen_Start_Aver = 0;
 short hwAR_GsenData_Buf0[GSEN_LEN];
@@ -243,7 +243,7 @@ u8 sensor_getData(void)		//得到陀螺仪的六个数据
 	    	sensor_gyroFiliter();	//陀螺仪平滑滤波
 	    	sensor_gSensorFiliter();//加速度平滑滤波
 	    }
-/*
+
 	    if(gz_<0)
 	    {
 	       if(gz_>-25){gz_=0;}
@@ -252,7 +252,7 @@ u8 sensor_getData(void)		//得到陀螺仪的六个数据
 	    {
 	        if(gz_<25){gz_=0;}
 	    }
-*/
+
 
 	    return(1);
 }

@@ -911,7 +911,8 @@ enum{
 	FLD_SPWM0_FUNC =			BIT(14),
 	FLD_SPWM1_FUNC =			BIT(15),
 	FLD_SPWM2_FUNC =			BIT(16),
-	FLD_DP_FUNC =		    BIT(23),
+	FLD_DP_FUNC =		        BIT(22),
+	FLD_DM_FUNC =		        BIT(22),
 
 };
 

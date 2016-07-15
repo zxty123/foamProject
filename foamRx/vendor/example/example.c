@@ -18,7 +18,9 @@
 
 
 
+#define DUPLEX	1
 
+#define     TX_DONE               while(REG_ADDR8(0x41c)&BIT(1))
 
 #define USE_SUSPEND   1
 
@@ -50,6 +52,10 @@ int gps_x,gps_y,gps_z;
 volatile float dbg_imu;
 
 
+u8 wifi_data[10];
+u8 wifi_data_[10];
+u32 b_wifi=0;
+
 u16 addr_rx_tmp;
 u16 addr_tx_tmp;
 u8 vr_lr_tmp;
@@ -63,7 +69,14 @@ u8 trim_fb_tmp;
 u8 trim_lr_tmp;
 u8 trim_rotor_tmp;
 
+u8 trim_lr_rcv;
+u8 trim_lr_offset;
+u8 trim_fb_rcv;
+u8 trim_fb_offset;
+u8 trim_rotor_rcv;
+u8 trim_rotor_offset;
 
+u8 pairing_flag=1;
 
 u32 b_bat=0;
 u32 m_stop=0;
@@ -123,7 +136,7 @@ u32 startflytime;
 s32 pwm_m1,pwm_m2,pwm_m3,pwm_m4;
 
 //优化程序后油门曲线表在此调整
-const unsigned short  throttle_table[12] = { 0, 180, 320, 410, 430, 450, 500, 550, 600, 650, 850,0};
+const unsigned short  throttle_table[12] = { 0, 180, 320, 410, 430, 450, 500, 550, 600, 650, 750,800};
 //const unsigned short  throttle_table[12] = { 0, 320, 380, 410, 430, 450, 500, 550, 600, 650, 850,0};
 
 
@@ -132,18 +145,16 @@ void throttle_curves(s32 tmp)
 {
 	s32 tmp2;
 	tmp=tmp*4;
-	 	 	 	if( tmp < 0 )
-	            {
-	                tmp = 0;
-	            }
-	            if( tmp > 1000 )
-	            {
-	                tmp = 1000;
-	            }
-	            tmp = tmp * 2559 / 1000;
-	            tmp2 = tmp/256; // range [0;9]
-	            tmp =throttle_table[tmp2] + (tmp-tmp2*256) * (throttle_table[tmp2+1]-throttle_table[tmp2]) / 256; // [0;2559]
-	            thr = ( thr * 7 +  tmp * 3 ) / 10;
+	if( tmp < 0 ){
+		tmp = 0;
+	}
+	if( tmp > 1000 ){
+		tmp = 1000;
+	}
+	tmp = tmp * 2559 / 1000;
+	tmp2 = tmp/256; // range [0;9]
+	tmp =throttle_table[tmp2] + (tmp-tmp2*256) * (throttle_table[tmp2+1]-throttle_table[tmp2]) / 256; // [0;2559]
+	thr = ( thr * 7 +  tmp * 3 ) / 10;
 }
 
 void led_not(u32 chn)
@@ -171,6 +182,80 @@ _attribute_ram_code_  void gpio_irq_handler(void)
 
 extern void (*gpio0_user_irq_handler)(void);
 
+
+
+void uart_rev9600(void)
+{
+	static u32 b_en=0;
+	static u32 len=0;
+	static u32 times=0;
+	static u32 data=0;
+	static u32 ind=0;
+
+//	led_not1(GPIO_GP19);
+
+	//led_not(GPIO_GP3);
+
+	//gpio_irq_cnt++;
+	times++;
+	if(times>55){ind=0;times=100;}
+
+	if(b_wifi==1)return;
+	if(b_en==0)
+	{
+	  //times++;
+	  if(gpio_read(GPIO_DP)!=0)return;//times=0;
+      //if(times<1)return;
+	  times=0;
+      b_en=1;
+   //   times=0;
+      data=0;
+      len=0;
+      reg_tmr_capt(1) = 52 * CLOCK_SYS_CLOCK_1US;
+	}
+	else
+	{
+		// times++;
+	//  if(times<2)return;
+	  if(gpio_read(GPIO_DP)!=0)data=data|0x80;
+	  len++;
+	  if(len>=9){reg_tmr_capt(1) = 45 * CLOCK_SYS_CLOCK_1US; b_en=0;return;}
+
+	  if(len>=8)
+	  {
+
+		  //gpio_irq_cnt=data;
+		  wifi_data[ind]=data;
+		  ind++;
+		  if(ind>=8){gpio_irq_cnt++;b_wifi=1;}
+	   }
+	  else data>>=1;
+
+	}
+
+	//led_not(GPIO_DM);
+
+}
+
+
+
+_attribute_ram_code_  void timer_irq1(void)
+{
+	if(gpio_read(GPIO_DP)==0)
+	{
+		gpio_write (GPIO_GP3, 0);
+	}
+	else
+	{
+		gpio_write (GPIO_GP3, 1);
+	}
+
+	//led_not(GPIO_GP3);
+	uart_rev9600();
+}
+
+
+extern void (*timer_irq1_handler)(void);
 
 
 
@@ -251,6 +336,7 @@ void user_rcv_proc(u8* p)
 {
 	static u32 b_photo=0;
 	static u32 b_camra=0;
+	signed char temp;
 	//pkt_rf.data[0]++;
 	u32 page;
 	u16 *p1;
@@ -261,10 +347,25 @@ void user_rcv_proc(u8* p)
 	ptr_pkt_rf->addr_rx=ppkt_rf->addr_rx;
 	ptr_pkt_rf->vr_lr=ppkt_rf->vr_lr;
 	b_rf=1;
-	if(ptr_pkt_rf->addr_rx==7777)//接收到遥控地址
+#if DUPLEX
+	if(ptr_pkt_rf->addr_tx==tx_addr_u16)//接收到遥控地址
 	{
-		if(ptr_pkt_rf->addr_tx==tx_addr_u16)//发给遥控地址也相同
+		if(ptr_pkt_rf->addr_rx==2222){
+			ptr_pkt_rf->trim_fb=trim_fb_offset;
+			ptr_pkt_rf->trim_lr=trim_lr_offset;
+			//ptr_pkt_rf->trim_rotor=trim_rotor_offset;
+			ptr_pkt_rf->addr_rx=rx_addr_u16;
+			sleep_us(1000);
+			SetTxMode(g_rf_chn, RF_CHN_TABLE);
+			TxPkt (ptr_pkt_rf);
+			TX_DONE;
+			sleep_us(1000);
+		}else if(ptr_pkt_rf->addr_rx==rx_addr_u16)//发给遥控地址也相同
 		{
+#else
+		if(ptr_pkt_rf->addr_rx==8888){
+			if(ptr_pkt_rf->addr_tx==tx_addr_u16){
+#endif
 			button_2_tmp=ppkt_rf->vr_lr^ppkt_rf->vr_rotor^ppkt_rf->vr_fb^ppkt_rf->vr_thr^ppkt_rf->vr_stunt;
 			button_2_tmp=button_2_tmp^ppkt_rf->button_1^ppkt_rf->trim_fb^ppkt_rf->trim_lr^ppkt_rf->trim_rotor;
 			if(button_2_tmp==ppkt_rf->button_2)
@@ -277,9 +378,15 @@ void user_rcv_proc(u8* p)
 		       vr_stunt_tmp=ppkt_rf->vr_stunt;
 	           button_1_tmp=ppkt_rf->button_1;
 	           button_2_tmp=ppkt_rf->button_2;
-	           trim_fb_tmp=ppkt_rf->trim_fb*2;
-	           trim_lr_tmp=ppkt_rf->trim_lr*2;
+
+	           trim_fb_rcv=ppkt_rf->trim_fb;
+	           trim_lr_rcv=ppkt_rf->trim_lr;
+	           //trim_rotor_rcv=ppkt_rf->trim_rotor;
+
+	           trim_fb_tmp=trim_fb_rcv*2;
+	           trim_lr_tmp=trim_lr_rcv*2;
 	           trim_rotor_tmp=ppkt_rf->trim_rotor*2;//取遥控数据
+
 
 	           if(vr_stunt_tmp==0x99)
 	           {
@@ -287,7 +394,7 @@ void user_rcv_proc(u8* p)
 	        	   {
 	        		   b_photo=1;
 
-	        		   gpio_write (GPIO_GP19, 0);
+	        		   gpio_write (GPIO_GP3, 0);
 	        		   time[TIME_CAMERA_PHOTO]=clock_time();
 	        		   time_cameraPhoto=200;
 	        	   }
@@ -299,9 +406,9 @@ void user_rcv_proc(u8* p)
 	           	    if(b_camra==0)
 	           	    {
 	           	      b_camra=1;
-	           	      gpio_write (GPIO_GP19, 0);
+	           	      gpio_write (GPIO_GP3, 0);
 	           	      time[TIME_CAMERA_PHOTO]=clock_time();
-	           	      time_cameraPhoto=1000;
+	           	      time_cameraPhoto=900;
 	           	    }
 	           }
 	           else b_camra=0;
@@ -351,14 +458,42 @@ void user_rcv_proc(u8* p)
 }
 
 
+
+void time1_initial(void)
+{
+
+	timer_irq1_handler = timer_irq1;
+	 //BM_CLR(reg_tmr_ctrl, 3);                                               // 停止timer1
+	 reg_tmr_tick(1) = 0;                                                        // 重新计数
+	// reg_tmr_capt(1) = 100 * CLOCK_SYS_CLOCK_1US;        // 100us
+
+	 reg_tmr_capt(1) = 45 * CLOCK_SYS_CLOCK_1US;
+	 BIT_SET(REG_ADDR8(0x620), 3);                                              // 打开 timer1
+	 reg_irq_mask |=FLD_IRQ_TMR1_EN;
+
+
+	 //reg_tmr_tick(2) = 0;
+	 //reg_tmr_capt(2) = 1 * CLOCK_SYS_CLOCK_1US;
+	// BIT_SET(REG_ADDR8(0x620), 6);
+
+}
+
+
+
 void io_init(void)
 {
+	gpio_set_func(GPIO_DP, AS_GPIO);
+	gpio_set_input_en(GPIO_DP,1);
+	gpio_set_output_en(GPIO_DP, 0);
+	gpio_write (GPIO_DP, 1);
+	WriteAnalogReg (0x0a,( ReadAnalogReg (0x0a)&0x7f));
+
 	gpio_set_func(GPIO_GP24, AS_GPIO);
 	gpio_set_output_en(GPIO_GP24, 1);
 
 	gpio_set_func(GPIO_GP3, AS_GPIO);
-		gpio_set_output_en(GPIO_GP3, 1);
-		gpio_write (GPIO_GP3, 0);
+	gpio_set_output_en(GPIO_GP3, 1);
+	gpio_write (GPIO_GP3, 1);
 
 	gpio_set_func(GPIO_GP23, AS_GPIO);
 	gpio_set_output_en(GPIO_GP23, 1);
@@ -373,7 +508,6 @@ void io_init(void)
 	gpio_set_func(GPIO_GP17, AS_GPIO);
     gpio_set_output_en(GPIO_GP17, 0);
 	gpio_set_input_en(GPIO_GP17, 1);
-
 
 	gpio_set_func(GPIO_GP19, AS_GPIO);
 	gpio_set_output_en(GPIO_GP19, 1);
@@ -477,7 +611,7 @@ void debug_send(u16 x,u16 y,u16 z)
 				   dectectData.rotor=gps_z;
 
 				   dectectData.cmd1=x;
-				   dectectData.cmd2=y*10;
+				   dectectData.cmd2=y;
 				   dectectData.cmd3=z;
 
 				   dectectData.fn1=44;
@@ -520,19 +654,50 @@ void debug_send(u16 x,u16 y,u16 z)
 }
 
 
+/*
+void wifi_dataCheck(void)
+{
+	u8 temp;
+	if(b_wifi==0)return;
 
+	b_wifi=0;
 
+	if(wifi_data[0]!=0x66)return;
+	if(wifi_data[7]!=0x99)return;
+	temp=(wifi_data[1]^wifi_data[2]^wifi_data[3]^wifi_data[4]^wifi_data[5])&0xff;
+	if(wifi_data[6]==temp)
+	{
+		if(rf_lostTime_>20)
+		{
+
+			rf_lostTime_=100;
+		  vr_thr_tmp=wifi_data_[3]=wifi_data[3];
+		  vr_fb_tmp=wifi_data_[2]=wifi_data[2];
+		  vr_lr_tmp=wifi_data_[1]=wifi_data[1];
+		  vr_rotor_tmp=wifi_data[4]^0xff;
+
+		  rf_lostTime=0;
+		  if(vr_thr_tmp<35){b_motorProtect=1;}//解遥控数据b_rf=b_rf1=2
+		  	           //  rf_lostTime=0;
+		  	           b_rf=3;
+		  	           b_rf1=2;
+		}
+	}
+}
+*/
 
 
 void rf_matchAddr(void)
 {
 	static u16 tx_addr;
     u32 times;
-    u8 temp11;
+    u32 wait_time;
+    u8 temp11,time123=0;
+    u8 i;
     rx_addr_u16=vendor_id_get();//0x99;客户ID
 
 //while(1)
-{
+//{
 	g_rf_chn=2;
     times=0;
     /*
@@ -563,15 +728,31 @@ void rf_matchAddr(void)
 	ptr_pkt_rf->addr_rx=0;
 	while(1)
 	{
+		//wifi_dataCheck();
+
 		RF_rcv_process(user_rcv_proc);
-		if(time_checkMs(TIME_RF_UPDATA,80)==1){led_not(GPIO_GP24);times++;}
+		if(time_checkMs(TIME_RF_UPDATA,300)==1){led_not(GPIO_GP24);times++;}
 		//if(times>3)break;//750ms退出
 		if(b_rf==1)
 		{
 		   b_rf=0;
 		   tx_addr_u16=ptr_pkt_rf->addr_tx;
-		   if(ptr_pkt_rf->addr_rx==3333)break;
-		   //break;
+		   ptr_pkt_rf->trim_fb=trim_fb_offset;
+		   ptr_pkt_rf->trim_lr=trim_lr_offset;
+		   //ptr_pkt_rf->trim_rotor=trim_rotor_offset;
+#if DUPLEX
+		   if(ptr_pkt_rf->addr_rx==2222||ptr_pkt_rf->addr_rx==rx_addr_u16){
+			   ptr_pkt_rf->addr_rx=rx_addr_u16;
+			   sleep_us(1000);
+			   SetTxMode(2, RF_CHN_TABLE);
+			   TxPkt (ptr_pkt_rf);
+			   TX_DONE;
+			   break;
+		   }
+#else
+			   if(ptr_pkt_rf->addr_rx==2222)break;
+#endif
+
 		}
 
 	}
@@ -584,25 +765,37 @@ void rf_matchAddr(void)
 		g_rf_chn=rf_cha2;
 		SetRxMode (g_rf_chn, RF_CHN_TABLE);
 
-		gpio_write (GPIO_GP24, 1);
-		time_ms(1500);
+		wait_time=clock_time();
 	while(1)
 	{
 		RF_rcv_process(user_rcv_proc);
-				if(time_checkMs(TIME_RF_UPDATA,500)==1){led_not(GPIO_GP24);times++;}
+				if(time_checkMs(TIME_RF_UPDATA,70)==1){led_not(GPIO_GP24);times++;}
+				if(clock_time_exceed(wait_time,50000)){
+					wait_time=clock_time();
+					time123++;
+					if(time123>20)
+						break;
+				}
+//				if(time_checkMs(TIME_PAIRING_TIMEOUT,5000)==1)break;
 				//if(times>3)break;//750ms退出
 				if(b_rf1==2)
 				{
 				   b_rf1=0;
 				   if(tx_addr_u16==ptr_pkt_rf->addr_tx)
 				   {
-				       if(ptr_pkt_rf->addr_rx==7777)break;
-				   }
+#if DUPLEX
+				       if(ptr_pkt_rf->addr_rx==rx_addr_u16){
+				    	   pairing_flag=0;
+				    	   break;
+				       }
+#else
+				       if(ptr_pkt_rf->addr_rx==8888)break;
+#endif
+
 
 				}
 
 	}
-
 
 
 
@@ -645,6 +838,8 @@ void rf_dataUpdate(void)
     u32 temp;
 
     static short thrLast1=0;
+
+    //wifi_dataCheck();
 
     	    //if((rf_lostTime>7)||(bat_lowTime>1800)||(motor_protect==1))
             if((rf_lostTime>7)||(P_bat))
@@ -726,6 +921,11 @@ void rf_dataUpdate(void)
 		rf_lostTime=200;	//校准标志
 	}
 
+
+
+
+
+
 	 throttle_curves(vr_thr_tmp);					//油门算法函数
 
 	if(vr_fb_tmp>0x80)			//手柄 x,y,z计算
@@ -757,12 +957,12 @@ void rf_dataUpdate(void)
 
 	if((z>45)||(z<-45))								//防止自转刷锅动作，锁定 z 轴程序
 	{
-		startflytime=180;
-		pid_gyro_integrator[0]=0;
-		pid_gyro_integrator[1]=0;
-		pid_gyro_integrator[2]=0;
-		pid_integrator[0]=0;
-		pid_integrator[1]=0;
+		startflytime=900;
+		//pid_gyro_integrator[0]=0;
+		//pid_gyro_integrator[1]=0;
+		//pid_gyro_integrator[2]=0;
+		//pid_integrator[0]=0;
+		//pid_integrator[1]=0;
 	}
 	else
 	{
@@ -797,7 +997,7 @@ void rf_dataUpdate(void)
 	{
 		x=0,y=0;
 
-		/*
+
 		if(time_checkMs(TIME_IMU_RST,100)==1)
 		{
 			//if(stunt_type==0)IMU_init();
@@ -815,12 +1015,12 @@ void rf_dataUpdate(void)
 		else
 		{
 			xy_userIndex=0;
-			x=-(x_userSum/xy_userIndex1)*50/100;
-			y=-(y_userSum/xy_userIndex1)*50/100;//yfpeng翘头，*参数越大，翘头越厉害
+			x=-(x_userSum/xy_userIndex1)*10/100;
+			y=-(y_userSum/xy_userIndex1)*10/100;//yfpeng翘头，*参数越大，翘头越厉害
 			x_userSum-=(x_userSum/xy_userIndex1);
 			y_userSum-=(y_userSum/xy_userIndex1);
 		}
-        */
+
 
 	}
 
@@ -932,6 +1132,13 @@ void motor_Check(short x,short y,short z)
 
 	//	led_not(GPIO_GP24);
 
+			 if((vr_thr_tmp<40)&&(vr_rotor_tmp<0x40)&&(vr_fb_tmp<0x40)&&(vr_lr_tmp>0xc0))
+			 {
+				    vr_thr_tmp=0;
+			}
+
+
+
 		if(b_motorProtect==0)
 		{
 		   vr_thr_tmp=0;
@@ -964,6 +1171,14 @@ void motor_Check(short x,short y,short z)
 			}
             if(imu_rest>300)imuKp=0.8f;
 
+            //if(trim_rotor_rcv!=trim_rotor_offset||trim_fb_rcv!=trim_fb_offset||trim_lr_rcv!=trim_lr_offset)
+            if(trim_fb_rcv!=trim_fb_offset||trim_lr_rcv!=trim_lr_offset)
+            {
+            	trim_fb_offset=trim_fb_rcv;
+            	trim_lr_offset=trim_lr_rcv;
+            	//trim_rotor_offset=trim_rotor_rcv;
+            	flash_writeAll();
+            }
 			return;
 		}
 		imuKp=0.3f;
@@ -1181,6 +1396,8 @@ void stunt_playTurn(void)
 
 		   // z=pid_xyz(0,gz,gps_z,2);
 
+		  //  z=(gz/dectectData.stunt7);
+
 
 
             motor_set(x,y,z);
@@ -1205,7 +1422,7 @@ void stunt_play(void)
 
 	   pid_integrator[0]=0;
 	   pid_integrator[1]=0;
-	   startflytime=180;
+	   startflytime=600;
 	 // pid_reset=200;
       if(time_checkMs(TIME_STUNT_UPDATA,300)==1)
       {
@@ -1214,41 +1431,44 @@ void stunt_play(void)
       }
       return;
    }
-      if(stunt_bat==1)dectectData.stunt2=910;
-      else dectectData.stunt2=910;//750;
+      if(stunt_bat==1)dectectData.stunt2=888;
+      else dectectData.stunt2=888;//750;
 
-      //imuKp=0.01f;//25
-	   stunt_timePwm(400,dectectData.stunt2);
+      imuKp=0.01f;//25
+	   stunt_timePwm(430,dectectData.stunt2);
 	   stunt_timePwm(20,50);
 
-	   //PID_AP=1500;						//翻滚加速度设置
-	   //PID_GP=2600;
-	   PID_GP=3800;
-	   PID_GD=15000;
+	   	   	   	   	   	   //翻滚加速度设置
 
-	   PID_AP=4000;
-	  // PID_AD=450;
-	//   if(stunt_type==3||stunt_type==4)PID_AP=2000;
+	   PID_GP=3800;		//old data:3800
+	   PID_GD=15000;	//old data:15000
+	   PID_AP=5000;		//old data:4000
+	   PID_ZP=10000;
+
 	   stunt_playTurn();
-	//   stunt_autoPlay();
-
-//	       PID_GP=2000;
-//	  	   PID_GD=17000;
 	   if(stunt_bat==1)dectectData.stunt8=500;
 	         else dectectData.stunt8=500;
 	   //stunt_timePwm(dectectData.stunt8,dectectData.stunt2);	//翻滚结束前上升函数
+
+	   //stunt_timePwm(100,800);	old data
+	   //stunt_timePwm(400,900);	old data
+	   //stunt_timePwm(100,800);	old data
+
+	   //if(stunt_bat==0)
+	   //{
 	   stunt_timePwm(100,800);
-	   stunt_timePwm(400,900);
+	   stunt_timePwm(400,850);
 	   stunt_timePwm(100,800);
+	   //}
+	  // else
+	   //{
+	//	stunt_timePwm(150,800);
+		//stunt_timePwm(600,900);
+		//stunt_timePwm(150,800);
+	  // }
 
 	   pid_normalMode();			//回复到正常模式  pid 数据
 
-	  // stunt_timePwm(700,500);//stunt8
-	  // stunt_playTurn();
-	   //stunt_timePwm(400,800);
-
-
-	   //pid_normalMode();
 
 	   time[TIME_STUNT_UPDATA]= clock_time();
 
@@ -1337,10 +1557,11 @@ void rf_matchChn(void)
 	if(time_checkMs(TIME_RF_UPDATA,50)==0)return;
 
 	chn++;
-	if(chn==1)g_rf_chn=2;//rf_cha0;
+	if(chn==1)g_rf_chn=rf_cha0;
 	if(chn==2)g_rf_chn=rf_cha1;
-	if(chn==3){g_rf_chn=rf_cha2;chn=0;}
-	if(chn>3)chn=0;
+	if(chn==3)g_rf_chn=rf_cha2;
+	if(chn==4){g_rf_chn=2;chn=0;}
+	if(chn>4)chn=0;
 	SetRxMode (g_rf_chn, RF_CHN_TABLE);
 }
 
@@ -1349,7 +1570,7 @@ void bat_check(void)
 	static u32 bat_time=0,p_bat_time=0,stunt_bat_time=0;
 	static u32 bat_limit=0;
 
-//	if(time_checkMs(TIME_CAMERA_PHOTO,time_cameraPhoto)==1) gpio_write (GPIO_GP19, 1);
+	if(time_checkMs(TIME_CAMERA_PHOTO,time_cameraPhoto)==1) gpio_write (GPIO_GP3, 1);
 
 
 
@@ -1423,7 +1644,7 @@ void bat_check(void)
 		if(batled>10)
 		{
 			bat_limit++;
-		    if(bat_limit>=30)P_bat=1;
+		    if(bat_limit>=60)P_bat=1;
 			batled=0;
 
 		    led_not(GPIO_GP24);
@@ -1522,7 +1743,9 @@ void  user_init(void)
     //debug_codeUpdata();
 
     io_init();
+	//gpio_write (GPIO_GP3, 1);
     i2c_init();
+    time1_initial();
     sensor_initial();
     rf_lostTime=0;
 
@@ -1534,7 +1757,8 @@ void  user_init(void)
     gpio_write (GPIO_GP24, 1);
     time_ms(1000);
 
-    rf_matchAddr();
+    while(pairing_flag!=0)
+    	rf_matchAddr();
     //rf_lostTime=200;
 }
 
@@ -1544,6 +1768,7 @@ void main_loop(void)
 ////
     if((rf_lostTime>=100))//||(rf_lostTime==0))
     {
+    	   startflytime=0;
     	   sensor_offset();
     	   flash_ramRst();
     	   //if(rf_lostTime>=200) flash_ramRst();
@@ -1563,7 +1788,7 @@ void main_loop(void)
     IMU_init();
 
     pwm_speedSet(0,0,0,0);
-    pwm_init(6);	//7:750		6:1.5k	5:3k	4:6k
+    pwm_init(4);	//7:750		6:1.5k	5:3k	4:6k
     pid_normalMode();
 	rf_lostTime=0;     //初始化
 
@@ -1572,7 +1797,7 @@ void main_loop(void)
 	while(1)
 	{
 	  RF_rcv_process(user_rcv_proc);//循环中处理
-	  debug_send(vr_thr_tmp,trim_rotor_tmp,voltage);	//上位机调试功能，量产时注释掉
+	  debug_send( wifi_data[0], wifi_data[3],voltage);	//上位机调试功能，量产时注释掉
 
 	  app_quad();								//四轴飞机应该程序：飞行姿态，翻滚
 	  rf_matchChn();		//rf 选频段

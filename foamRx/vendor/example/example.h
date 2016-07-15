@@ -21,6 +21,7 @@ extern "C" {
 #define MODULE_RF_ENABLE		0
 #define IRQ_GPIO0_ENABLE        1
 #define USING_HW_I2C        1
+#define	IRQ_TIMER1_ENABLE  	1
 
 ///////////////////  interrupt  //////////////////////////////
 

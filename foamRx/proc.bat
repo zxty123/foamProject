@@ -1,2 +1,2 @@
-tc32-elf-objcopy -O binary zxty_sdk.elf ".tlsdk"
+tc32-elf-objcopy -O binary foamRx1.elf ".tlsdk"
 otp .tlsdk  boot.bin

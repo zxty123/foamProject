@@ -30,7 +30,8 @@
 #define    TIME_MOTOR_PROTECT 15
 
 #define    TIME_IMU_RST 16
-#define    TIME_ALL   17
+#define    TIME_PAIRING_TIMEOUT 17
+#define    TIME_ALL   18
 
 /*
 enum

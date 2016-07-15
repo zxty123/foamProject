@@ -10,6 +10,13 @@
 
 #include "../../proj/tl_common.h"
 
+extern u8 trim_lr_rcv;
+extern u8 trim_lr_offset;
+extern u8 trim_fb_rcv;
+extern u8 trim_fb_offset;
+extern u8 trim_rotor_rcv;
+extern u8 trim_rotor_offset;
+
 
 u32 flash_writeAll(void);
 u32 flash_write(u32 addr, u16 id);

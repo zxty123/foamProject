@@ -321,10 +321,10 @@ void IMU_getYawPitchRoll(void) {
   if(stunt_type!=0)
   {
 	  pitch = asin_f(2.0f*(q[1]*q[3] - q[0]*q[2]))* 180.0f/M_PI;
-	  pitch=pitch*1.5f;
+	 // pitch=pitch*1.5f;
 	 roll = asin_f(2.0f*(q[0]*q[1] + q[2]*q[3]))* 180.0f/M_PI;
-	 roll=roll*1.5f;
-	  if(stunt_type==1)stuntP=0;//-30000.0f;;  //f IMU_Pitch_  f
+	 //roll=roll*1.5f;
+	  if(stunt_type==1)stuntP=0.f;//-30000.0f;;  //f IMU_Pitch_  f
 	  	  			if(stunt_type==2)stuntP=0.0f;;//b IMU_Pitch_ 45 b
 	  	  			if(stunt_type==3)stuntP=-0.0f;;// IMU_Roll_ 3000 r
 	  	              if(stunt_type==4)stuntP=0.0f;  // IMU_Roll_  l

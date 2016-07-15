@@ -43,7 +43,7 @@ u32 flash_read(u32 addr)
 }
 
 
-u32 flash_writeAll(void)
+_attribute_ram_code_ u32 flash_writeAll(void)
 {
 	u32 address=2;
 		u16 *p;
@@ -77,7 +77,12 @@ u32 flash_writeAll(void)
 	     address=address+2;
 	     flash_write(address,(short)acc_DCZ);
 	     address=address+2;
-
+	     flash_write(address,trim_lr_offset);
+	     address=address+2;
+	     flash_write(address,trim_fb_offset);
+//	     address=address+2;
+//	     flash_write(address,trim_rotor_offset);
+	     address=address+2;
 	     return 1;
 }
 
@@ -114,6 +119,12 @@ u32 flash_readAll(void)
 		address=address+2;
 	    acc_DCZ=flash_read(address);
 		address=address+2;
+		trim_lr_offset=flash_read(address);
+		address=address+2;
+		trim_fb_offset=flash_read(address);
+		address=address+2;
+//		trim_rotor_offset=flash_read(address);
+//		address=address+2;
 
 		return 1;
 }
@@ -131,22 +142,20 @@ void flash_saveData(void)
 
 void flash_ramRst(void)
 {
-			   dectectData.g_agc=3;//3//陀螺仪负反馈
-			   dectectData.g_p=3000;//3000;//1500;			//陀螺仪 pid 设置
-			   dectectData.g_i=40;//40;
-			   dectectData.g_d=12000;//15000;//5000;4000
+			   dectectData.g_agc=3;//old data:3				//陀螺仪负反馈
+			   dectectData.g_p=3000;//old data:3000;			//陀螺仪 pid 设置
+			   dectectData.g_i=40;//old data:40;
+			   dectectData.g_d=12000;//old data:12000
 
-			   dectectData.a_agc=10;//负反馈			//角度  pid 设置
-			   dectectData.a_p=3500;//2700;220000  1600
-			   dectectData.a_i=0; //50 150
-			   dectectData.a_d=100;//50;
+			   dectectData.a_agc=10;						//none	//加速度负反馈
+			   dectectData.a_p=4000;//old data:3500					//加速度  pid 设置
+			   dectectData.a_i=0; //old data:0
+			   dectectData.a_d=100;//old data:100
 
-
-
-			   dectectData.z_p=5000;//3000			//z轴  pid 设置
-			   dectectData.z_i=50;  //50
-			   dectectData.z_d=11;//11
-			   dectectData.z_angle=12;
+			   dectectData.z_p=6000;//old data:5000			//z轴  pid 设置
+			   dectectData.z_i=50;  //old data:50
+			   dectectData.z_d=1000;						//none
+			   dectectData.z_angle=12;					//none
 
 			   dectectData.rc_spd1=12;//10 15		//手柄速度控制
 			   dectectData.rc_spd2=9;//15
@@ -165,6 +174,6 @@ void flash_ramRst(void)
 
 			   dectectData.stunt5=600;////pwm 0~180~-180度 100
 			   dectectData.stunt6=650;//speed pwm 0~180~-180度 780
-			   dectectData.stunt7=13;//gyro 18
+			   dectectData.stunt7=12;//gyro 18
 			   dectectData.stunt8=300;//自动回中的马达上升时间
 }

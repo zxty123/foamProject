@@ -20,7 +20,8 @@ _attribute_ram_code_ void irq_handler(void)
 	if(IRQ_TIMER1_ENABLE && (src & FLD_IRQ_TMR1_EN)){
 		if(timer_irq1_handler)
 			timer_irq1_handler();
-		reg_irq_src = FLD_IRQ_TMR1_EN;
+		//reg_irq_src = FLD_IRQ_TMR1_EN;
+		reg_tmr_sta = FLD_TMR_STA_TMR1;
 	}
 
     if(src & BIT(22)){

@@ -32,46 +32,46 @@ sizedummy \
 all: pre-build main-build
 
 # Main-build Target
-main-build: zxty_SDK.elf secondary-outputs
+main-build: foamRx1.elf secondary-outputs
 
 # Tool invocations
-zxty_SDK.elf: $(OBJS) $(USER_OBJS)
+foamRx1.elf: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: TC32 C Linker'
-	tc32-elf-ld --gc-sections -L"E:\foamProject\foamSource\trunk\foamRx\proj_lib" -L"E:\foamProject\foamSource\trunk\foamRx\vendor\lib" -T ../boot.link -o"zxty_SDK.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	tc32-elf-ld --gc-sections -L"C:\Users\PengYF\Desktop\Ò£¿Ø·ÉÐÐÆ÷\yfpeng\20160619Plane\Rx\20160715\foamRx\proj_lib" -L"C:\Users\PengYF\Desktop\Ò£¿Ø·ÉÐÐÆ÷\yfpeng\20160619Plane\Rx\20160715\foamRx\vendor\lib" -T ../boot.link -o"foamRx1.elf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 	$(MAKE) --no-print-directory post-build
 
-boot-.lst: zxty_SDK.elf
+boot-.lst: foamRx1.elf
 	@echo 'Invoking: TC32 Create Extended Listing'
-	tc32-elf-objdump -x -D -l -S zxty_SDK.elf  >"boot-.lst"
+	tc32-elf-objdump -x -D -l -S foamRx1.elf  >"boot-.lst"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-: zxty_SDK.elf
+: foamRx1.elf
 	@echo 'Create Flash image (binary format)'
-	zxty_SDK.elf
+	foamRx1.elf
 	@echo 'Finished building: $@'
 	@echo ' '
 
-sizedummy: zxty_SDK.elf
+sizedummy: foamRx1.elf
 	@echo 'Invoking: Print Size'
-	tc32-elf-size -t zxty_SDK.elf
+	tc32-elf-size -t foamRx1.elf
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(OBJS)$(FLASH_IMAGE)$(ELFS)$(LST)$(SIZEDUMMY) zxty_SDK.elf
+	-$(RM) $(OBJS)$(FLASH_IMAGE)$(ELFS)$(LST)$(SIZEDUMMY) foamRx1.elf
 	-@echo ' '
 
 pre-build:
-	-E:\foamProject\foamSource\trunk\foamRx/getver.sh
+	-C:\Users\PengYF\Desktop\Ò£¿Ø·ÉÐÐÆ÷\yfpeng\20160619Plane\Rx\20160715\foamRx/getver.sh
 	-@echo ' '
 
 post-build:
-	-E:\foamProject\foamSource\trunk\foamRx/proc.bat
+	-C:\Users\PengYF\Desktop\Ò£¿Ø·ÉÐÐÆ÷\yfpeng\20160619Plane\Rx\20160715\foamRx/proc.bat
 	-@echo ' '
 
 secondary-outputs: $(LST) $(FLASH_IMAGE) $(SIZEDUMMY)

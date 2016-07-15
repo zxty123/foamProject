@@ -17,6 +17,7 @@ extern float pid_gyro_integrator[3];
 extern int pid_integratorZ;
 extern int PID_AP,PID_AI,PID_AD;
 extern int PID_GP,PID_GI,PID_GD,PID_GA;
+extern int PID_ZP,PID_ZI;
 
 #define Math_fConstrain(val, min, max)  ((val>max)? max:(val<min)? min:val)
 

@@ -23,7 +23,7 @@ int pid_lastError[2];
 float pid_gyro_integrator[3];
 int pid_gyroLast[2];
 float pid_lastAngle[2];
-int Differ[2][4];
+int Differ[3][3];
 int pid_integratorZ;
 
 extern u32 stunt_type;
@@ -81,7 +81,7 @@ void pid_normalMode(void)
 
 	PID_ZP=dectectData.z_p;
 	PID_ZI=dectectData.z_i;
-		//PID_ZD=100;   //0.05
+		PID_ZD=dectectData.z_d;
 
 
 /*
@@ -113,7 +113,7 @@ s16 pid_xyz(float pid_imu,s32 gyro,s32 pid_target,u8 type)
         gyro = (float) accgyroval[type] * 0.85f +lastacc[type] * 0.15f ;
         lastacc[type] = gyro;
 
-    //    gyro = Math_fConstrain(gyro,-15000,15000);//100
+     //   gyro = Math_fConstrain(gyro,-10000,10000);//100
 
    if(type==2)
    {
@@ -121,12 +121,25 @@ s16 pid_xyz(float pid_imu,s32 gyro,s32 pid_target,u8 type)
    	   kp = error * (float)PID_ZP * 0.0001f;
 
        pid_gyro_integrator[type] += error * 0.0001f * (float)PID_ZI;
-   	   pid_gyro_integrator[type] = Math_fConstrain(pid_gyro_integrator[type],-180,180);//100
+   	   pid_gyro_integrator[type] = Math_fConstrain(pid_gyro_integrator[type],-200,200);//100
 
    	   ki=pid_gyro_integrator[type];
 
+   	 //error = gyro - pid_gyroLast[type];
+   	   //   pid_gyroLast[type] =gyro;
+   	     // kd = error  * (float)PID_ZD * 0.0001f;//陀螺新数据和旧数据误差乘以比例
+
+
+     //	Differ[type][0] = gyro - pid_gyroLast[type];	//抑制正在进行中的动作
+   	             //       pid_gyroLast[type] = gyro;
+   	             //       deltaSum = Differ[type][0]+Differ[type][1]+Differ[type][2];
+   	              //      Differ[type][2] = Differ[type][1];
+   	               //     Differ[type][1] = Differ[type][0];
+   	               //     error=deltaSum;
+   	                //    kd = error  * (float)PID_ZD * 0.0001f;
+
    	   //ki=0;
-   	   error=kp+ki;
+   	   error=kp+ki;//-kd;
 
    }
    else
@@ -137,13 +150,13 @@ s16 pid_xyz(float pid_imu,s32 gyro,s32 pid_target,u8 type)
 	  	   {
 
 	  	   startflytime++;
-	  	     if(startflytime>200)
+	  	     if(startflytime>1000)
 	  	     {
 	  	    	startflytime=10000;
-	  		  if((pid_imu>1.1f)||(pid_imu<-1.1f))
+	  		  if((pid_imu>0.5f)||(pid_imu<-0.5f))
 	  		  {
-	  		    if(pid_imu>1.1f)pid_imu=pid_imu-1.1f;
-	  		    if(pid_imu<-1.1f)pid_imu=pid_imu+1.1f;
+	  		    if(pid_imu>0.5f)pid_imu=pid_imu-0.5f;
+	  		    if(pid_imu<-0.5f)pid_imu=pid_imu+0.5f;
 	  		  }
 	      	   else pid_imu=0;
 	      	  }
@@ -152,7 +165,7 @@ s16 pid_xyz(float pid_imu,s32 gyro,s32 pid_target,u8 type)
 
       error = pid_imu + (float)pid_target/100.0f;
 
-      error = Math_fConstrain(error,-30,30);//50
+      error = Math_fConstrain(error,-25,25);//50
 
       gyro=gyro-((s32)(pid_gyro_integrator[type]*PID_GA));
 
@@ -163,7 +176,7 @@ s16 pid_xyz(float pid_imu,s32 gyro,s32 pid_target,u8 type)
       pid_integrator[type] = 0;//Math_fConstrain(pid_integrator[type],-100,100);//100
 
       pid_gyro_integrator[type] += (float)gyro * 0.0001f * (float)PID_GI;
-      pid_gyro_integrator[type] = Math_fConstrain(pid_gyro_integrator[type],-100,100);//100
+      pid_gyro_integrator[type] = Math_fConstrain(pid_gyro_integrator[type],-200,200);//100
 
       ki=pid_integrator[type]+pid_gyro_integrator[type];
 
