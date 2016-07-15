@@ -51,6 +51,7 @@ u8 bat_lower=0;
 u8 correct_flag;
 u8 swlistLast;
 u8 stunt_flag;
+u8 stunt_key_f;
 volatile u8 chn;
 const u8 rf_channel_select[9][4]= {
 	{22,40,60,13},
@@ -76,7 +77,7 @@ u32 b_rf=0;
 static inline void rf_send_data(void)
 {
 	int i;
-	for(i =0; i < 4; i++){
+	for(i =0; i < 3; i++){
 	//	chn=8;
 		Rf_TrxStateSet(RF_MODE_TX,rf_channel_select[chn][i]);//¸ü»»Æµ¶Î
 		WaitUs (200);
@@ -118,6 +119,12 @@ void irq_rf_rx(void)
 			tx_packet.vr_lr=rf_packet1->vr_lr;
 			tx_packet.vr_rotor=rf_packet1->vr_rotor;
 			tx_packet.addr_rx=rf_packet1->addr_rx;
+			tx_packet.trim_fb=rf_packet1->trim_fb;
+			trim_fb=rf_packet1->trim_fb;
+			tx_packet.trim_lr=rf_packet1->trim_lr;
+			trim_lr=rf_packet1->trim_lr;
+			//tx_packet.trim_rotor=rf_packet1->trim_rotor;
+			//trim_rotor=rf_packet1->trim_rotor;
 			b_rf=1;
 		}
 		rev_flag=0;
@@ -254,17 +261,18 @@ void imu_offset(void)
 					if(times<100)return;
 					if(b_run==0)
 					{
-						buzzer_play(300);
-						time_ms(200);
-						buzzer_play(300);
-						time_ms(200);
+						//buzzer_play(300);
+						//time_ms(200);
+						//buzzer_play(300);
+						//time_ms(200);
 
-						//correct_flag=1;
+						//correct_flag=1;//
 
 						tx_packet.vr_stunt=0xcc;
 						b_run=1;
 						tx_packet.trim_fb=trim_fb=0;
 						tx_packet.trim_lr=trim_lr=0;
+						//tx_packet.trim_rotor=trim_rotor=0;
 					}
 					return;
 				}
@@ -330,40 +338,119 @@ u32 pair_count;
 u32 count;
 void pairing_code1(void)
 {
-	u32 led_time,pairing_time;
-	u8 led_s=0;
+	u32 led_time,pairing_time,adc;
+	u8 led_s=0,state=0;
 	chn=8;
-	tx_packet.addr_rx=1111;
+	tx_packet.addr_rx=2222;
 	led_time=clock_time();
 	pairing_time=clock_time();
+
+
+
 	while(1)
 	{
 		if(b_rf==1)break;
-		if(clock_time_exceed(pairing_time,80000)){
+		if(clock_time_exceed(pairing_time,6000))
+		{
 //			led_not(LED_PIN); //80msÁÁ/ÃðÒ»´Î£»
 			pairing_time=clock_time();
-			rf_send_data();
+			Rf_TrxStateSet(RF_MODE_TX,13);//¸ü»»Æµ¶Î
+			WaitUs (200);
+			Rf_TxPkt((void *) &tx_packet);//·¢ËÍÊý¾Ý
+			while(!(RF_TxFinish()==2));
+			Rf_TxFinishClearFlag();
 			Rf_TrxStateSet(RF_MODE_RX,13);//¸ü»»Æµ¶Î
 			pair_count++;
 		}
-		if(clock_time_exceed(led_time,500000)){
+
+		if(clock_time_exceed(led_time,100000))
+		{
 			led_time=clock_time();
-			if(led_s){
-				led_s=0;
+			led_s++;
+
+			if(led_s<5)
+			{
 				LED_ON;
-			}else{
-				led_s=1;
-				LED_OFF;
+			}
+			else
+			{
+				if(led_s<6)
+				{
+					LED_OFF;
+				}
+				else
+				{
+					if(led_s<7)
+					{
+						LED_ON;
+					}
+					else
+					{
+						if(led_s<8)
+						{
+							led_s=0;
+							LED_OFF;
+						}
+					}
+				}
 			}
 		}
 
+
+
+
+#if(MODULE_WATCHDOG_ENABLE)
+		wd_clear();
+#endif
+
+	}
+	chn=tx_packet.addr_tx&0x07;
+
+	buzzer_play(1000);
+	sleep_us(1000);
+	buzzer_play(1000);
+	while(1)
+	{
+		adc=read_control_value(control_pin[1]);
+		adc=adc_avr(adc);
+		if(state==0)
+		{
+			if(adc<0x10)
+			{
+				state=1;
+			}
+		}else
+			if(state==1)
+			{
+				if(adc>0xf0)
+				{
+				state=2;
+				buzzer_play(500);
+				}
+			}else
+				if(state==2)
+				{
+					if(adc<0x20)
+					{
+						buzzer_play(500);
+						break;
+					}
+				}
+
+		if(clock_time_exceed(pairing_time,8000))
+		{
+			pairing_time=clock_time();
+			rf_checksum();
+//			chn=8;
+			rf_send_data();
+		}
 #if(MODULE_WATCHDOG_ENABLE)
 		wd_clear();
 #endif
 	}
 	LED_ON;
-	buzzer_play(1000);
-	chn=tx_packet.addr_tx&0x07;
+//	buzzer_play(1000);
+
 	sleep_time=0;
 	Rf_TrxStateSet(RF_MODE_TX,rf_channel_select[chn][0]);//¸ü»»Æµ¶Î
 	pairing_flag=0;
@@ -375,7 +462,7 @@ void pairing_code(void)
 {
 	u32 adc,pairring_time,led_time;
 	u8 state=0,led_s=0;
-	tx_packet.addr_rx=3333;
+	tx_packet.addr_rx=2222;
 
 	//tx_packet.addr_tx=get_id(0x3fc0);
 	rf_checksum();
@@ -445,7 +532,7 @@ void pairing_code(void)
 	}
 
 	LED_ON;
-	tx_packet.addr_rx=7777;
+	tx_packet.addr_rx=8888;
 	chn=tx_packet.addr_tx&0x07;
 	sleep_time=0;
 }
@@ -463,7 +550,7 @@ void check_bat(void)
 
 	adc_channel_config(GPIO_GP23);
 	batData=adc_start_with_output()>>2;
-	if(batData<178)
+	if(batData<162)	//162:2.1	178:2.3
 		{batTimes++;}
 	else
 		{batTimes=0;}
@@ -518,7 +605,7 @@ void user_init()
 	write_reg8(0x80042b,0xf8);
 	Rf_PowerLevelSet(RF_POWER_8dBm);
 //	rf_tx_irq_handler = irq_rf_tx;
-	tx_packet.addr_rx=7777;
+	tx_packet.addr_rx=8888;
 	//tx_packet.addr_tx=get_id(ID_ADDR);
 	tx_packet.addr_tx=get_id(0x3fc0);
 	tx_packet.vr_rotor=0x80;
@@ -539,7 +626,9 @@ void user_init()
 		}
 	}
 
-	pairing_code();
+//	pairing_code();
+	LED_ON;
+	sleep_us(1000000);
 
 	temp=read_sw_value();
 	temp=temp>>2;
@@ -550,6 +639,7 @@ void user_init()
 		swlistLast=2;
 		tx_packet.button_1&=0xcf;
 		stunt_flag=0;
+		stunt_key_f=0;
 	}
 	else
 	{	if(temp<20)
@@ -557,6 +647,7 @@ void user_init()
 			//·­¹öµµ
 			swlistLast=0;
 			stunt_flag=1;
+			stunt_key_f=0;
 		}
 		else
 		{
@@ -564,6 +655,7 @@ void user_init()
 			swlistLast=1;
 			tx_packet.button_1|=0x30;
 			stunt_flag=0;
+			stunt_key_f=0;
 		}
 	}
 
@@ -578,7 +670,8 @@ s32 Sw_adcValue;
 void main_loop (void)
 {
 	dbg2++;
-
+	if(pairing_flag)
+		pairing_code1();
 	adc_Value=read_button_value();
 	//tx_packet.trim_lr=adc_Value>>2;
 
@@ -586,7 +679,7 @@ void main_loop (void)
 	//tx_packet.trim_lr=Sw_adcValue>>2;
 
 	if(clock_time_exceed(sending_time,8000)){
-		sending_time=clock_time();
+		sending_time=clock_time(); //
 		control_value_processing();
 		imu_offset();
 		vr_thrCheck();

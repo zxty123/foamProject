@@ -33,9 +33,9 @@ u8 b_noHeadMode;
 u8 b_led;
 
 s32 offset_key;
-s32 trim_lr;
-s32 trim_fb;
-s32 trim_rotor;
+s8 trim_lr;
+s8 trim_fb;
+s8 trim_rotor;
 
 void buzzer_play(s32 playTime);
 void buzzer_play1(s32 playTime);

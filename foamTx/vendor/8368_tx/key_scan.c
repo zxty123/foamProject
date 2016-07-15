@@ -27,6 +27,7 @@ static u32 b_highTurn1=0;
 static u8 onekeyreturn_state=0;
 u8 f_b_trim_flag;
 extern u8 stunt_flag;
+extern u8 stunt_key_f;
 extern u8 bat_lower;
 extern u8 correct_flag;
 extern u8 swlistLast;
@@ -42,52 +43,52 @@ void stunt_check(void)
 	static u32 debonce3;
 	static u32 debonce4;
 
-    if( tx_packet.vr_fb>0xe8) //f stunt b0
+    if( tx_packet.vr_fb>0xf0) //f stunt b0
 	{
     	debonce1++;
     	if(debonce1>5)
     	{
     		tx_packet.vr_stunt=0x44;
-    		buzzer_list=0;
+    		//buzzer_list=0;
     		stunt_flag=0;
     	}
 	}else
     	debonce1=0;
 
 //==================================================
-	if( tx_packet.vr_fb<0x18) //b stunt
+	if( tx_packet.vr_fb<0x20) //b stunt
 	{
 		debonce2++;
 		if(debonce2>5)
 		{
 			tx_packet.vr_stunt=0x33;
-			buzzer_list=0;
+			//buzzer_list=0;
 			stunt_flag=0;
 		}
 	}else
     	debonce2=0;
 
 //==================================================
-    if( tx_packet.vr_lr<0x18) //left stunt 30
+    if( tx_packet.vr_lr<0x10) //left stunt 30
     {
     	debonce3++;
     	if(debonce3>5)
     	{
     		tx_packet.vr_stunt=0x22;
-    		buzzer_list=0;
+    		//buzzer_list=0;
     		stunt_flag=0;
     	}
     }else
     	debonce3=0;
 
 //==================================================
-	if( tx_packet.vr_lr>0xe8) //right stunt
+	if( tx_packet.vr_lr>0xf0) //right stunt
 	{
 		debonce4++;
 		if(debonce4>5)
 		{
 			tx_packet.vr_stunt=0x11;
-			buzzer_list=0;
+			//buzzer_list=0;
 			stunt_flag=0;
 		}
 	}
@@ -264,45 +265,41 @@ void buzzer_scan(void)
 
 		if(tx_packet.vr_thr<35)
 		{
-				//buzzer_list=0;
 				stunt_flag=0;
+				stunt_key_f=0;
 		}
 		else
 		{
 			//翻滚档，只要油门大于35，可以根据方向手柄控制前后左右方向，达到阀值即可前后左右翻滚，无需按翻滚健
+
 			if(swlistLast==0)
 			{
-				stunt_check();
-				/*
-				if(time_checkMs(TIME_STUNT_UPDATA,300)==1)
+				if(stunt_key_f==1)
 				{
-					if(state_g_r)
-					{
-						LED_ON;
-						state_g_r=0;
-						buzzer_play1(200);
-					}
-					else
-					{
-						LED_OFF;
-						state_g_r=1;
-					}
+		    		tx_packet.vr_stunt=0x44;
+		    		stunt_flag=0;
+		    		stunt_key_f=0;
+					i=0;
 				}
-				*/
+				else
+				{
+					if(( tx_packet.vr_fb>0xf0)||( tx_packet.vr_fb<0x20)||( tx_packet.vr_lr<0x10)||( tx_packet.vr_lr>0xf0))
+					{
+						i=0;
+					}
+
+					stunt_check();
+				}
 			}
 			else
 			{
 	    		tx_packet.vr_stunt=0x44;
-	    		buzzer_list=0;
 	    		stunt_flag=0;
+	    		stunt_key_f=0;
+				i=0;
 			}
 		}
 
-		if(stunt_flag==0)
-		{
-			LED_ON;
-			state_g_r=1;
-		}
 	}
 
 
@@ -334,6 +331,7 @@ void buzzer_scan(void)
 	}
 
 	//无头
+	/*
 	if(b_noHeadMode==1)
 	{
 		if(time_checkMs(TIME_BUZZER_UPDATA,time)==1)
@@ -344,6 +342,7 @@ void buzzer_scan(void)
 		}
 		return;
 	}
+	*/
 
 	if(buzzer_list==7)
 	{
@@ -402,7 +401,7 @@ void buzzer_scan(void)
 	if(time_checkMs(TIME_BUZZER_UPDATA,300)==1)
 	{
 		i++;
-		if(i>2)
+		if(i>4)
 		{
 			i=0;
 			tx_packet.vr_stunt=0xaa;
@@ -426,11 +425,11 @@ void key_onHeadMode(void)
 		b_turn=1;
 		tx_packet.button_1|=0x01;
 		b_noHeadMode=1;
-		buzzer_list=0;
+		buzzer_list=1;
 	}else{
 		b_turn=0;
 		tx_packet.button_1&=0xfe;
-		buzzer_list=0;
+		buzzer_list=1;
 		b_noHeadMode=0;
 		gpio_write (LED_PIN, 1);
 	}
@@ -593,7 +592,9 @@ void key_cmd(u32 cmd)
 				LED_ON;
 			}
 */
+			buzzer_list=1;
 			stunt_flag=1;
+			stunt_key_f=1;
 			break;
 
 		case L_TRIM:
@@ -867,7 +868,7 @@ void key_scan(s32 adc)
 		}
 
 	u32_debonce++;
-	if(u32_debonce<5)
+	if(u32_debonce<4)
 	{
 		return;
 	}
@@ -928,6 +929,7 @@ void	sw_scan(s32 swadc)
 
 		buzzer_list=10;
 		stunt_flag=1;
+		stunt_key_f=0;
 		return;
 	}
 
@@ -937,6 +939,7 @@ void	sw_scan(s32 swadc)
 		tx_packet.button_1|=0x30;
 		buzzer_list=5;
 		stunt_flag=0;
+		stunt_key_f=0;
 		return;
 	}
 
@@ -946,6 +949,7 @@ void	sw_scan(s32 swadc)
 		tx_packet.button_1&=0xcf;
 		buzzer_list=1;
 		stunt_flag=0;
+		stunt_key_f=0;
 		return;
 	}
 
